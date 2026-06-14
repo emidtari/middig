@@ -1,218 +1,154 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { ALL_FILTERS, thumbFor, type Site } from "@/lib/sites-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Middig — Web Design Inspiration" },
-      { name: "description", content: "A curated showcase of the finest web design from around the world." },
-      { property: "og:title", content: "Middig — Web Design Inspiration" },
-      { property: "og:description", content: "Browse curated websites by style, type, and subject." },
+      { title: "Middig — Curated Web Design Inspiration" },
+      { name: "description", content: "Middig is a curated gallery of exceptional websites from studios and independents worldwide. Browse by style, type, and subject." },
+      { property: "og:title", content: "Middig — Curated Web Design Inspiration" },
+      { property: "og:description", content: "A curated gallery of exceptional web design." },
+      { property: "og:url", content: "https://middig.lovable.app/" },
+      { property: "og:type", content: "website" },
     ],
+    links: [{ rel: "canonical", href: "https://middig.lovable.app/" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "Middig",
+        url: "https://middig.lovable.app/",
+        description: "A curated showcase of the finest web design.",
+      }),
+    }],
   }),
-  component: Index,
+  component: Home,
 });
 
-type Site = {
-  id: number;
-  title: string;
-  studio: string;
-  styles: string[];
-  types: string[];
-  subjects: string[];
-  seed: string;
-};
+function Home() {
+  const [settings, setSettings] = useState<{ hero_headline: string; hero_subhead: string; featured_site_id: string | null } | null>(null);
+  const [featured, setFeatured] = useState<Site | null>(null);
+  const [recent, setRecent] = useState<Site[]>([]);
 
-const SITES: Site[] = [
-  { id: 1, title: "Atlas Studio", studio: "Field Office", styles: ["Minimal", "Typographic"], types: ["Portfolio"], subjects: ["Design"], seed: "atlas-studio-architecture" },
-  { id: 2, title: "Norden Coffee", studio: "Brun & Co", styles: ["Editorial", "Light"], types: ["E-commerce"], subjects: ["Food & Drink"], seed: "norden-coffee-shop" },
-  { id: 3, title: "Halcyon Magazine", studio: "Press Room", styles: ["Editorial", "Serif"], types: ["Publication"], subjects: ["Art"], seed: "halcyon-magazine-editorial" },
-  { id: 4, title: "Form & Field", studio: "Solo", styles: ["Minimal"], types: ["Portfolio"], subjects: ["Photography"], seed: "form-field-photo" },
-  { id: 5, title: "Pivot Labs", studio: "North Studio", styles: ["Bold", "Dark"], types: ["Agency"], subjects: ["Technology"], seed: "pivot-labs-tech" },
-  { id: 6, title: "Maison Verde", studio: "Atelier B", styles: ["Editorial", "Light"], types: ["Brand"], subjects: ["Fashion"], seed: "maison-verde-fashion" },
-  { id: 7, title: "Sable Hotel", studio: "Beacon", styles: ["Luxury", "Serif"], types: ["Hospitality"], subjects: ["Travel"], seed: "sable-hotel-luxury" },
-  { id: 8, title: "Kindling Type", studio: "Foundry", styles: ["Typographic"], types: ["Foundry"], subjects: ["Typography"], seed: "kindling-type-foundry" },
-  { id: 9, title: "Orbit Records", studio: "Wax & Wane", styles: ["Bold", "Colorful"], types: ["Brand"], subjects: ["Music"], seed: "orbit-records-music" },
-  { id: 10, title: "Quiet Index", studio: "Index Office", styles: ["Minimal", "Monochrome"], types: ["Directory"], subjects: ["Design"], seed: "quiet-index-archive" },
-  { id: 11, title: "Brae Restaurant", studio: "Salt", styles: ["Editorial"], types: ["Restaurant"], subjects: ["Food & Drink"], seed: "brae-restaurant-table" },
-  { id: 12, title: "Northwind Studio", studio: "Self", styles: ["Minimal", "Light"], types: ["Portfolio"], subjects: ["Illustration"], seed: "northwind-illustration" },
-  { id: 13, title: "Field Notes Co", studio: "Press", styles: ["Editorial", "Serif"], types: ["E-commerce"], subjects: ["Stationery"], seed: "field-notes-paper" },
-  { id: 14, title: "Cascade Outdoor", studio: "Ridge", styles: ["Bold"], types: ["E-commerce"], subjects: ["Travel"], seed: "cascade-outdoor-mountains" },
-  { id: 15, title: "Pale Blue Dot", studio: "Cosmos", styles: ["Dark", "Minimal"], types: ["Editorial"], subjects: ["Science"], seed: "pale-blue-dot-space" },
-  { id: 16, title: "Studio Anvil", studio: "Anvil", styles: ["Bold", "Typographic"], types: ["Agency"], subjects: ["Branding"], seed: "studio-anvil-brand" },
-  { id: 17, title: "Linen & Lark", studio: "Lark", styles: ["Light", "Editorial"], types: ["E-commerce"], subjects: ["Home"], seed: "linen-lark-home" },
-  { id: 18, title: "Course / Compass", studio: "Compass", styles: ["Minimal"], types: ["Education"], subjects: ["Learning"], seed: "course-compass-learning" },
-];
+  useEffect(() => {
+    (async () => {
+      const { data: s } = await supabase.from("site_settings" as never).select("hero_headline, hero_subhead, featured_site_id").eq("id", 1).maybeSingle();
+      setSettings(s as never);
 
-const ALL_FILTERS = {
-  Style: ["Minimal", "Editorial", "Bold", "Typographic", "Dark", "Light", "Luxury", "Monochrome", "Colorful", "Serif"],
-  Type: ["Portfolio", "E-commerce", "Publication", "Agency", "Brand", "Hospitality", "Foundry", "Directory", "Restaurant", "Editorial", "Education"],
-  Subject: ["Design", "Food & Drink", "Art", "Photography", "Technology", "Fashion", "Travel", "Typography", "Music", "Illustration", "Stationery", "Science", "Branding", "Home", "Learning"],
-} as const;
+      const { data: sites } = await supabase
+        .from("sites" as never)
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false })
+        .limit(7);
+      const list = (sites as Site[] | null) ?? [];
 
-function thumb(seed: string, w = 1200, h = 800) {
-  return `https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=${w}&q=80&auto=format&fit=crop&sig=${encodeURIComponent(seed)}`;
-}
+      const fid = (s as never as { featured_site_id?: string } | null)?.featured_site_id ?? null;
+      const f = fid ? list.find((x) => x.id === fid) ?? null : null;
+      const featuredFinal = f ?? list.find((x) => x.featured) ?? list[0] ?? null;
+      setFeatured(featuredFinal);
+      setRecent(list.filter((x) => x.id !== featuredFinal?.id).slice(0, 6));
+    })();
+  }, []);
 
-// Use picsum for visually distinct, free thumbnails by seed.
-function picsum(seed: string, w = 1200, h = 800) {
-  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
-}
-
-function Index() {
-  const [activeGroup, setActiveGroup] = useState<keyof typeof ALL_FILTERS | null>(null);
-  const [active, setActive] = useState<{ group: keyof typeof ALL_FILTERS; value: string } | null>(null);
-
-  const filtered = useMemo(() => {
-    if (!active) return SITES;
-    return SITES.filter((s) => {
-      if (active.group === "Style") return s.styles.includes(active.value);
-      if (active.group === "Type") return s.types.includes(active.value);
-      return s.subjects.includes(active.value);
-    });
-  }, [active]);
+  const headline = settings?.hero_headline ?? "Web design inspiration, curated.";
+  const subhead = settings?.hero_subhead ?? "Middig collects exceptional work from studios and independents around the world.";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-5">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="text-xl font-semibold tracking-tight">Middig</span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">— web design inspiration</span>
-          </Link>
-          <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
-            <a href="#gallery" className="hover:text-foreground">Gallery</a>
-            <a href="#submit" className="hover:text-foreground">Submit</a>
-            <a href="#about" className="hover:text-foreground">About</a>
-            <a href="#newsletter" className="rounded-full bg-foreground px-4 py-1.5 text-background hover:opacity-90">Subscribe</a>
-          </nav>
-        </div>
+      <SiteHeader />
 
-        <div className="border-t border-border">
-          <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2 px-6 py-3 text-sm">
-            {(Object.keys(ALL_FILTERS) as Array<keyof typeof ALL_FILTERS>).map((group) => (
-              <div key={group} className="relative">
-                <button
-                  onClick={() => setActiveGroup(activeGroup === group ? null : group)}
-                  className={`rounded-full border px-3 py-1.5 transition-colors ${
-                    activeGroup === group ? "border-foreground bg-foreground text-background" : "border-border hover:bg-accent"
-                  }`}
-                >
-                  {group}
-                </button>
-                {activeGroup === group && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-border bg-popover p-2 shadow-lg">
-                    <div className="max-h-80 overflow-y-auto">
-                      {ALL_FILTERS[group].map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => {
-                            setActive(active?.group === group && active?.value === v ? null : { group, value: v });
-                            setActiveGroup(null);
-                          }}
-                          className={`block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-accent ${
-                            active?.group === group && active?.value === v ? "bg-accent font-medium" : ""
-                          }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {active && (
-              <button
-                onClick={() => setActive(null)}
-                className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-primary-foreground"
-              >
-                <span className="text-xs uppercase tracking-wide opacity-80">{active.group}:</span>
-                <span>{active.value}</span>
-                <span className="ml-1 text-xs">✕</span>
-              </button>
-            )}
-
-            <div className="ml-auto text-xs text-muted-foreground">
-              {filtered.length} {filtered.length === 1 ? "site" : "sites"}
+      {/* HERO */}
+      <section className="border-b border-border" aria-label="Hero">
+        <div className="mx-auto grid max-w-[1400px] gap-10 px-6 py-14 md:grid-cols-2 md:py-20 lg:gap-16">
+          <div className="flex flex-col justify-center">
+            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3" /> Updated weekly
+            </span>
+            <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">{headline}</h1>
+            <p className="mt-4 max-w-lg text-base text-muted-foreground md:text-lg">{subhead}</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/gallery" className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90">
+                Browse the gallery <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/submit" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent">
+                Submit a site
+              </Link>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {ALL_FILTERS.Style.slice(0, 6).map((s) => (
+                <Link key={s} to="/gallery" search={{ style: s } as never} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground">
+                  {s}
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-      </header>
 
-      <main id="gallery" className="mx-auto max-w-[1400px] px-6 py-10">
-        <section className="mb-10">
-          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">
-            A curated showcase of the finest web design.
-          </h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            Middig collects exceptional work from studios and independents — sorted by style, type, and subject.
+          <div className="relative">
+            {featured ? (
+              <a href={featured.url ?? "#"} target={featured.url ? "_blank" : undefined} rel="noreferrer" className="group block">
+                <div className="overflow-hidden rounded-xl border border-border bg-muted">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img src={thumbFor(featured)} alt={`${featured.title} website preview`} loading="eager" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-border bg-card px-5 py-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">Featured</div>
+                      <div className="mt-0.5 text-base font-medium">{featured.title}</div>
+                    </div>
+                    {featured.studio && <span className="text-xs text-muted-foreground">{featured.studio}</span>}
+                  </div>
+                </div>
+              </a>
+            ) : (
+              <div className="aspect-[4/3] rounded-xl border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground flex items-center justify-center text-center">
+                Featured work will appear here once admins publish their first site.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* RECENT */}
+      <main className="mx-auto max-w-[1400px] px-6 py-14">
+        <div className="mb-8 flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">Recently added</h2>
+            <p className="mt-1 text-sm text-muted-foreground">A glimpse of what's been catching our eye.</p>
+          </div>
+          <Link to="/gallery" className="text-sm text-muted-foreground hover:text-foreground">View all →</Link>
+        </div>
+
+        {recent.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
+            No published sites yet. Admins can add them from the dashboard.
           </p>
-        </section>
-
-        <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((site) => (
-            <article key={site.id} className="group cursor-pointer">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
-                <img
-                  src={picsum(site.seed, 1000, 750)}
-                  alt={`${site.title} website preview`}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-              </div>
-              <div className="mt-3 flex items-baseline justify-between gap-4">
-                <h3 className="text-sm font-medium">{site.title}</h3>
-                <span className="text-xs text-muted-foreground">{site.studio}</span>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                {[...site.styles, ...site.types].slice(0, 3).map((t) => (
-                  <span key={t}>{t}</span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <p className="py-20 text-center text-muted-foreground">No sites match this filter yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {recent.map((s) => (
+              <article key={s.id} className="group">
+                <a href={s.url ?? "#"} target={s.url ? "_blank" : undefined} rel="noreferrer">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
+                    <img src={thumbFor(s)} alt={`${s.title} website preview`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                  </div>
+                  <div className="mt-3 flex items-baseline justify-between gap-4">
+                    <h3 className="text-sm font-medium">{s.title}</h3>
+                    {s.studio && <span className="text-xs text-muted-foreground">{s.studio}</span>}
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
         )}
       </main>
 
-      <footer id="about" className="mt-20 border-t border-border">
-        <div className="mx-auto grid max-w-[1400px] gap-10 px-6 py-14 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="text-lg font-semibold">Middig</div>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              An independent gallery of web design. Updated regularly with new work from studios and independents around the world.
-            </p>
-          </div>
-          <div id="submit">
-            <div className="text-sm font-medium">Submit</div>
-            <p className="mt-2 text-sm text-muted-foreground">Have a site to share? Submissions are open.</p>
-            <a href="#" className="mt-3 inline-block text-sm underline">Submit a site →</a>
-          </div>
-          <div id="newsletter">
-            <div className="text-sm font-medium">Newsletter</div>
-            <p className="mt-2 text-sm text-muted-foreground">A weekly digest of the best new additions.</p>
-            <form className="mt-3 flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                placeholder="you@studio.com"
-                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button className="rounded bg-foreground px-3 py-1.5 text-sm text-background">Join</button>
-            </form>
-          </div>
-        </div>
-        <div className="border-t border-border">
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-5 text-xs text-muted-foreground">
-            <span>© {new Date().getFullYear()} Middig</span>
-            <span>Made with care</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
