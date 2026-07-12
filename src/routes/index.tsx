@@ -45,6 +45,7 @@ function Home() {
         .from("sites" as never)
         .select("*")
         .eq("published", true)
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(7);
       const list = (sites as Site[] | null) ?? [];
@@ -77,7 +78,7 @@ function Home() {
               <Link to="/gallery" className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90">
                 Browse the gallery <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/submit" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent">
+              <Link to="/portal/submit" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent">
                 Submit a site
               </Link>
             </div>

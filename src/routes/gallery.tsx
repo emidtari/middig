@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ALL_FILTERS, thumbFor, type Site } from "@/lib/sites-data";
+
+type GSite = Site & { slug: string };
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -20,14 +22,14 @@ export const Route = createFileRoute("/gallery")({
 });
 
 function Gallery() {
-  const [sites, setSites] = useState<Site[]>([]);
+  const [sites, setSites] = useState<GSite[]>([]);
   const [activeGroup, setActiveGroup] = useState<keyof typeof ALL_FILTERS | null>(null);
   const [active, setActive] = useState<{ group: keyof typeof ALL_FILTERS; value: string } | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("sites" as never).select("*").eq("published", true).order("created_at", { ascending: false });
-      setSites((data as Site[] | null) ?? []);
+      const { data } = await supabase.from("sites" as never).select("*").eq("published", true).eq("status", "approved").order("created_at", { ascending: false });
+      setSites((data as GSite[] | null) ?? []);
     })();
   }, []);
 
@@ -83,7 +85,7 @@ function Gallery() {
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((site) => (
               <article key={site.id} className="group">
-                <a href={site.url ?? "#"} target={site.url ? "_blank" : undefined} rel="noreferrer">
+                <Link to="/site/$slug" params={{ slug: site.slug }}>
                   <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
                     <img src={thumbFor(site)} alt={`${site.title} website preview`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
                   </div>
@@ -94,7 +96,7 @@ function Gallery() {
                   <div className="mt-1 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
                     {[...site.styles, ...site.types].slice(0, 3).map((t) => <span key={t}>{t}</span>)}
                   </div>
-                </a>
+                </Link>
               </article>
             ))}
           </div>
