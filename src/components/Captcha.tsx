@@ -10,10 +10,12 @@ function gen() {
 }
 
 export const Captcha = forwardRef<CaptchaHandle, { label?: string }>(function Captcha({ label = "Security check" }, ref) {
-  const [q, setQ] = useState(gen);
+  // Fixed initial values so SSR and first client render match; randomize after mount.
+  const [q, setQ] = useState({ a: 1, b: 1, answer: 2 });
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { setQ(gen()); }, []);
   useEffect(() => { setValue(""); setError(null); }, [q]);
 
   useImperativeHandle(ref, () => ({

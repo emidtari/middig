@@ -1,72 +1,61 @@
-## Tujuan
-Tambah hero baru, restruktur halaman untuk SEO, dan bangun dashboard admin lengkap dengan Lovable Cloud (auth + database) untuk mengelola konten, SEO, dan kontak.
+# Rencana Implementasi Middig — Fase 2
 
-## 1. Aktifkan Lovable Cloud
-- Provision database + auth.
-- Atur admin awal: `enils.id@gmail.com` (signup pertama via halaman /auth, role admin diberikan via migration seed).
+Scope besar, jadi saya kelompokkan supaya jelas apa yang masuk dan apa yang tidak. Semua akan menyesuaikan tampilan putih bersih yang sudah ada.
 
-## 2. Skema database
-- `sites` — id, title, studio, url, thumbnail_url, styles[], types[], subjects[], featured (bool), published (bool), created_at.
-- `site_settings` — singleton (id=1): site_title, site_description, og_image, twitter_handle, hero_headline, hero_subhead, featured_site_id.
-- `contact_messages` — id, name, email, message, created_at, read (bool). Insert publik (anon) dengan rate-limit kolom IP opsional; read admin only.
-- `contact_info` — singleton: email, address, social links.
-- `user_roles` + enum `app_role` + fungsi `has_role` (pola standar Lovable).
-- RLS:
-  - `sites`, `site_settings`, `contact_info`: SELECT publik untuk row `published`/settings; semua write hanya admin.
-  - `contact_messages`: INSERT anon, SELECT/UPDATE admin.
-  - `user_roles`: SELECT authenticated, write service_role.
+## 1. Database (migrasi baru)
 
-## 3. Restruktur frontend (SEO friendly)
-- Halaman dipecah jadi route terpisah, setiap route punya `head()` sendiri (title, description, og:*, canonical):
-  - `/` — Hero split + grid unggulan + CTA.
-  - `/gallery` — Grid lengkap + filter (pindahan dari index).
-  - `/about` — Tentang Middig.
-  - `/contact` — Form kontak (kirim ke `contact_messages`, captcha matematika).
-  - `/submit` — Form submit site (insert ke `sites` dengan `published=false`).
-  - `/auth` — Login/Signup admin (dengan captcha matematika + link "Lupa password").
-  - `/reset-password` — Halaman atur password baru (dipakai link recovery email).
-- `__root.tsx`: JSON-LD WebSite/Organization, og defaults, manifest, robots-friendly.
-- Semantik HTML: `<header>`, `<main>`, `<section>`, `<article>`, `<nav>`, satu `<h1>` per halaman, alt text pada thumbnail, lazy loading.
-- `public/robots.txt` + `public/sitemap.xml` (root + /gallery + /about + /contact + /submit).
+- Tabel baru `categories` (name, slug) — CRUD admin.
+- Tabel baru `site_categories` (site_id, category_id) untuk many-to-many.
+- Kolom baru di `sites`: `tags text[]`, `owner_id uuid` (member pemilik), `status` enum `pending|approved|rejected`, `rejection_reason text`. Field `styles/types/subjects` lama tetap ada agar tidak break, tapi form baru pakai kategori+tags.
+- Tabel `profiles` (user_id, display_name, avatar_url, tier `free|paid`, paid_until, sites_used_this_period, period_started_at). Trigger auto-create saat signup.
+- Tabel `payments` (user_id, provider `stripe`, amount, currency, status, stripe_session_id, created_at) untuk histori.
+- Function `can_submit_site(user_id)` — cek kuota (free: 5 total; paid: +20 per bulan sejak paid_until aktif).
+- RLS + GRANT lengkap. Approval publik: hanya row `status='approved' AND published=true` yang boleh dibaca `anon`; owner boleh baca miliknya sendiri via `authenticated`.
+- Seed 35 dummy sites (approved, published) + ~10 kategori standar (Portfolio, E-commerce, Editorial, Agency, Brand, Photography, Fashion, Food, Technology, Publication).
 
-### Hero baru ("Minimal split + featured site")
-- Kiri: H1 "Web design inspiration, curated.", subjudul, dua CTA (`Browse gallery`, `Submit a site`), chip kategori populer.
-- Kanan: kartu featured site (judul, studio, tag, thumbnail) yang diambil dari `site_settings.featured_site_id` (fallback ke item pertama).
-- Responsif: tumpuk di mobile, dua kolom di ≥md. Animasi hover halus pada featured.
+## 2. Payments — Stripe $3/bulan
 
-## 4. Dashboard admin `/admin` (protected via `_authenticated/`)
-Lokasi route: `src/routes/_authenticated/admin/...`
-- `/admin` — ringkasan: jumlah sites, draft, pesan baru.
-- `/admin/sites` — list, search, toggle published/featured, edit/hapus, tombol "New site".
-- `/admin/sites/new` & `/admin/sites/$id` — form (title, studio, url, thumbnail, styles/types/subjects multi-tag, published/featured).
-- `/admin/messages` — inbox pesan kontak, tandai sudah dibaca, hapus.
-- `/admin/seo` — atur site_title, description, og_image, twitter_handle, hero_headline, hero_subhead, featured_site_id.
-- `/admin/contact` — atur contact_info + lihat preview.
-- Sidebar responsif (drawer di mobile), header dengan avatar + logout.
-- Estetika: putih bersih, kartu border tipis, spacing lega, konsisten dengan public site.
+- Enable `Seamless Payments via Stripe` (Lovable built-in). Setelah aktif, buat satu produk **Middig Pro — $3/month** recurring via `batch_create_product`.
+- Checkout via server function → redirect ke Stripe Checkout (kartu + link/wallets; PayPal tersedia sebagai payment method di Stripe Checkout untuk mata uang yang mendukung, kalau tidak akan otomatis fallback ke kartu saja).
+- Webhook `/api/public/webhooks/stripe` update `profiles.tier='paid'`, `paid_until=now()+1 month`, reset quota bulanan.
+- Halaman `/portal/billing` — tampilkan status membership + tombol upgrade / manage.
 
-## 5. Auth & keamanan
-- Email/password lewat Supabase.
-- **Captcha matematika** (mis. "3 + 5 = ?") di form login, signup, lupa password, contact, submit — divalidasi client-side sebelum submit; soal di-randomize setiap render dan reset setelah gagal.
-- "Lupa password" → `supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + '/reset-password' })`.
-- `/reset-password` publik, deteksi `type=recovery`, panggil `updateUser({ password })`.
-- Hanya user dengan `has_role(uid, 'admin')` yang lolos `_authenticated/admin` (cek via server fn + redirect ke `/` jika bukan admin).
-- Seed admin: setelah `enils.id@gmail.com` signup pertama kali, trigger auto-assign role `admin` (atau migration `INSERT ... ON CONFLICT` berdasarkan email lookup di `auth.users`).
+## 3. Portal Member (`/portal/*`, protected `_authenticated`)
 
-## 6. Detail teknis
-- Server functions di `src/lib/*.functions.ts` untuk: list/create/update/delete sites, get/update site_settings & contact_info, list/mark messages, submit contact, submit site (publik).
-- Browser Supabase client untuk auth flow.
-- Tidak memakai Supabase Edge Functions.
-- `__root.tsx` listener `onAuthStateChange` (sudah ada di template) — tidak diduplikasi.
-- Form validation: zod + react-hook-form (sudah tersedia di stack shadcn).
+Semua di bawah layout `_authenticated` yang sudah ada:
+- `/portal` — dashboard: status tier, kuota tersisa, link cepat.
+- `/portal/profile` — edit display_name, avatar.
+- `/portal/password` — ubah password (via `supabase.auth.updateUser`).
+- `/portal/sites` — list situs milik member (semua status), edit & hapus.
+- `/portal/sites/new` — form daftar situs dengan **TipTap** rich text editor untuk deskripsi, multi-select kategori, tags (comma / chip input). Cek kuota sebelum submit. Status awal `pending`.
+- `/portal/billing` — upgrade / status membership.
 
-## 7. Verifikasi sebelum selesai
-- Build lulus.
-- `/` menampilkan hero split + featured.
-- `/auth` bisa signup → admin pertama otomatis dapat role.
-- `/admin` hanya bisa diakses admin.
-- CRUD sites berfungsi dan tercermin di `/gallery`.
-- Pesan kontak masuk inbox.
-- Reset password mengirim email & halaman `/reset-password` bekerja.
+Header publik dapat menu "Portal" saat login, "Sign in" saat tidak.
 
-Lanjut bangun?
+## 4. Frontend publik
+
+- **Halaman detail situs** `/site/$slug` (slug dari title): hero thumbnail, judul, studio, deskripsi (render HTML dari TipTap yang sudah disanitasi via DOMPurify), kategori & tags, link kunjungi. Head metadata dinamis + og:image dari thumbnail.
+- Galeri (`/gallery` & index): judul situs jadi link ke detail. Filter kategori dari tabel `categories`, filter tags dari tags array. Hanya tampilkan `status='approved'`.
+- Form submit publik `/submit` diarahkan ke `/portal/sites/new` (butuh login). Kalau belum login → redirect ke `/auth` dengan pesan.
+
+## 5. Admin baru
+
+- `/admin/categories` — CRUD kategori (list, add, rename, delete).
+- `/admin/sites` diperluas: tab **Pending approval** (approve / reject dengan alasan), tab **Approved**, tab **Rejected**. Approve set `status='approved'` + `published=true`.
+- `/admin/members` — list member, ubah tier manual, lihat kuota.
+- Sidebar admin dapat entry baru untuk Categories & Members.
+
+## 6. Dependencies
+
+- `bun add @tiptap/react @tiptap/starter-kit @tiptap/extension-link isomorphic-dompurify`
+- Stripe checkout via built-in — tidak perlu SDK sendiri.
+
+## 7. Yang **tidak** saya kerjakan di iterasi ini (biar realistis)
+
+- Email verifikasi custom, template email transaksional.
+- Manajemen billing lanjutan (proration, downgrade, invoice PDF).
+- Refund flow.
+- Rate limiting.
+- Multi-bahasa.
+
+Setelah kamu setuju, saya akan mulai dengan (a) enable Stripe payments, (b) migrasi DB + seed 35 dummy, (c) install deps TipTap, lalu bangun UI/logic secara paralel. Bilang **lanjut** kalau OK, atau koreksi bagian yang perlu diubah dulu.
