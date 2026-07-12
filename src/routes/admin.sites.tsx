@@ -96,6 +96,7 @@ function AdminSites() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className={`rounded-full px-2 py-0.5 ${(s as Site & {status?: string}).status === "approved" ? "bg-green-100 text-green-800" : (s as Site & {status?: string}).status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{(s as Site & {status?: string}).status ?? "—"}</span>
                     <span className={`rounded-full px-2 py-0.5 ${s.published ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>{s.published ? "Published" : "Draft"}</span>
                     {s.featured && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800">Featured</span>}
                   </div>
