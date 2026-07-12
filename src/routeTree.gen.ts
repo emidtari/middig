@@ -12,16 +12,25 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SiteSlugRouteImport } from './routes/site.$slug'
+import { Route as PortalSubmitRouteImport } from './routes/portal.submit'
+import { Route as PortalSitesRouteImport } from './routes/portal.sites'
+import { Route as PortalBillingRouteImport } from './routes/portal.billing'
+import { Route as AdminTagsRouteImport } from './routes/admin.tags'
 import { Route as AdminSitesRouteImport } from './routes/admin.sites'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
+import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminContactRouteImport } from './routes/admin.contact'
+import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminApprovalsRouteImport } from './routes/admin.approvals'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -36,6 +45,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GalleryRoute = GalleryRouteImport.update({
@@ -68,6 +82,31 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SiteSlugRoute = SiteSlugRouteImport.update({
+  id: '/site/$slug',
+  path: '/site/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalSubmitRoute = PortalSubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalSitesRoute = PortalSitesRouteImport.update({
+  id: '/sites',
+  path: '/sites',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalBillingRoute = PortalBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => PortalRoute,
+} as any)
+const AdminTagsRoute = AdminTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSitesRoute = AdminSitesRouteImport.update({
   id: '/sites',
   path: '/sites',
@@ -83,9 +122,24 @@ const AdminMessagesRoute = AdminMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMembersRoute = AdminMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContactRoute = AdminContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApprovalsRoute = AdminApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -96,13 +150,22 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/gallery': typeof GalleryRoute
+  '/portal': typeof PortalRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/categories': typeof AdminCategoriesRoute
   '/admin/contact': typeof AdminContactRoute
+  '/admin/members': typeof AdminMembersRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/tags': typeof AdminTagsRoute
+  '/portal/billing': typeof PortalBillingRoute
+  '/portal/sites': typeof PortalSitesRoute
+  '/portal/submit': typeof PortalSubmitRoute
+  '/site/$slug': typeof SiteSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,13 +174,22 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/gallery': typeof GalleryRoute
+  '/portal': typeof PortalRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/categories': typeof AdminCategoriesRoute
   '/admin/contact': typeof AdminContactRoute
+  '/admin/members': typeof AdminMembersRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/tags': typeof AdminTagsRoute
+  '/portal/billing': typeof PortalBillingRoute
+  '/portal/sites': typeof PortalSitesRoute
+  '/portal/submit': typeof PortalSubmitRoute
+  '/site/$slug': typeof SiteSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,13 +199,22 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/gallery': typeof GalleryRoute
+  '/portal': typeof PortalRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/categories': typeof AdminCategoriesRoute
   '/admin/contact': typeof AdminContactRoute
+  '/admin/members': typeof AdminMembersRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/tags': typeof AdminTagsRoute
+  '/portal/billing': typeof PortalBillingRoute
+  '/portal/sites': typeof PortalSitesRoute
+  '/portal/submit': typeof PortalSubmitRoute
+  '/site/$slug': typeof SiteSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,13 +225,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contact'
     | '/gallery'
+    | '/portal'
     | '/reset-password'
     | '/sitemap.xml'
     | '/submit'
+    | '/admin/approvals'
+    | '/admin/categories'
     | '/admin/contact'
+    | '/admin/members'
     | '/admin/messages'
     | '/admin/seo'
     | '/admin/sites'
+    | '/admin/tags'
+    | '/portal/billing'
+    | '/portal/sites'
+    | '/portal/submit'
+    | '/site/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,13 +249,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contact'
     | '/gallery'
+    | '/portal'
     | '/reset-password'
     | '/sitemap.xml'
     | '/submit'
+    | '/admin/approvals'
+    | '/admin/categories'
     | '/admin/contact'
+    | '/admin/members'
     | '/admin/messages'
     | '/admin/seo'
     | '/admin/sites'
+    | '/admin/tags'
+    | '/portal/billing'
+    | '/portal/sites'
+    | '/portal/submit'
+    | '/site/$slug'
   id:
     | '__root__'
     | '/'
@@ -174,13 +273,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contact'
     | '/gallery'
+    | '/portal'
     | '/reset-password'
     | '/sitemap.xml'
     | '/submit'
+    | '/admin/approvals'
+    | '/admin/categories'
     | '/admin/contact'
+    | '/admin/members'
     | '/admin/messages'
     | '/admin/seo'
     | '/admin/sites'
+    | '/admin/tags'
+    | '/portal/billing'
+    | '/portal/sites'
+    | '/portal/submit'
+    | '/site/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,9 +298,11 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
   GalleryRoute: typeof GalleryRoute
+  PortalRoute: typeof PortalRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubmitRoute: typeof SubmitRoute
+  SiteSlugRoute: typeof SiteSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -216,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gallery': {
@@ -260,6 +377,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/site/$slug': {
+      id: '/site/$slug'
+      path: '/site/$slug'
+      fullPath: '/site/$slug'
+      preLoaderRoute: typeof SiteSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/submit': {
+      id: '/portal/submit'
+      path: '/submit'
+      fullPath: '/portal/submit'
+      preLoaderRoute: typeof PortalSubmitRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/sites': {
+      id: '/portal/sites'
+      path: '/sites'
+      fullPath: '/portal/sites'
+      preLoaderRoute: typeof PortalSitesRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/billing': {
+      id: '/portal/billing'
+      path: '/billing'
+      fullPath: '/portal/billing'
+      preLoaderRoute: typeof PortalBillingRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/admin/tags': {
+      id: '/admin/tags'
+      path: '/tags'
+      fullPath: '/admin/tags'
+      preLoaderRoute: typeof AdminTagsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/sites': {
       id: '/admin/sites'
       path: '/sites'
@@ -281,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMessagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/members': {
+      id: '/admin/members'
+      path: '/members'
+      fullPath: '/admin/members'
+      preLoaderRoute: typeof AdminMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contact': {
       id: '/admin/contact'
       path: '/contact'
@@ -288,24 +447,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContactRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/approvals': {
+      id: '/admin/approvals'
+      path: '/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AdminApprovalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminApprovalsRoute: typeof AdminApprovalsRoute
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminContactRoute: typeof AdminContactRoute
+  AdminMembersRoute: typeof AdminMembersRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminSitesRoute: typeof AdminSitesRoute
+  AdminTagsRoute: typeof AdminTagsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminApprovalsRoute: AdminApprovalsRoute,
+  AdminCategoriesRoute: AdminCategoriesRoute,
   AdminContactRoute: AdminContactRoute,
+  AdminMembersRoute: AdminMembersRoute,
   AdminMessagesRoute: AdminMessagesRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminSitesRoute: AdminSitesRoute,
+  AdminTagsRoute: AdminTagsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface PortalRouteChildren {
+  PortalBillingRoute: typeof PortalBillingRoute
+  PortalSitesRoute: typeof PortalSitesRoute
+  PortalSubmitRoute: typeof PortalSubmitRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalBillingRoute: PortalBillingRoute,
+  PortalSitesRoute: PortalSitesRoute,
+  PortalSubmitRoute: PortalSubmitRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -314,9 +510,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
   GalleryRoute: GalleryRoute,
+  PortalRoute: PortalRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubmitRoute: SubmitRoute,
+  SiteSlugRoute: SiteSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

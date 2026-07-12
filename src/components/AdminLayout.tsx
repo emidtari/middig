@@ -1,12 +1,16 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { LayoutDashboard, Image, Inbox, Search, Phone, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Image, Inbox, Search, Phone, LogOut, Menu, X, CheckSquare, FolderTree, Tags, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const NAV = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
+  { to: "/admin/approvals", label: "Approvals", icon: CheckSquare },
   { to: "/admin/sites", label: "Sites", icon: Image },
+  { to: "/admin/categories", label: "Categories", icon: FolderTree },
+  { to: "/admin/tags", label: "Tags", icon: Tags },
+  { to: "/admin/members", label: "Members", icon: Users },
   { to: "/admin/messages", label: "Messages", icon: Inbox },
   { to: "/admin/seo", label: "SEO", icon: Search },
   { to: "/admin/contact", label: "Contact", icon: Phone },
