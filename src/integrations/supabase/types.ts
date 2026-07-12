@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_info: {
         Row: {
           address: string | null
@@ -68,6 +95,114 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          external_id: string | null
+          id: string
+          period_months: number
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          external_id?: string | null
+          id?: string
+          period_months?: number
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          external_id?: string | null
+          id?: string
+          period_months?: number
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          full_name: string | null
+          membership_tier: string
+          paid_sites_used_this_period: number
+          paid_until: string | null
+          period_started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          membership_tier?: string
+          paid_sites_used_this_period?: number
+          paid_until?: string | null
+          period_started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          membership_tier?: string
+          paid_sites_used_this_period?: number
+          paid_until?: string | null
+          period_started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      site_categories: {
+        Row: {
+          category_id: string
+          site_id: string
+        }
+        Insert: {
+          category_id: string
+          site_id: string
+        }
+        Update: {
+          category_id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_categories_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           featured_site_id: string | null
@@ -112,13 +247,48 @@ export type Database = {
           },
         ]
       }
+      site_tags: {
+        Row: {
+          site_id: string
+          tag_id: string
+        }
+        Insert: {
+          site_id: string
+          tag_id: string
+        }
+        Update: {
+          site_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_tags_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sites: {
         Row: {
           created_at: string
           description: string | null
+          description_html: string | null
           featured: boolean
           id: string
+          owner_id: string | null
           published: boolean
+          rejection_reason: string | null
+          slug: string | null
+          status: string
           studio: string | null
           styles: string[]
           subjects: string[]
@@ -132,9 +302,14 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          description_html?: string | null
           featured?: boolean
           id?: string
+          owner_id?: string | null
           published?: boolean
+          rejection_reason?: string | null
+          slug?: string | null
+          status?: string
           studio?: string | null
           styles?: string[]
           subjects?: string[]
@@ -148,9 +323,14 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          description_html?: string | null
           featured?: boolean
           id?: string
+          owner_id?: string | null
           published?: boolean
+          rejection_reason?: string | null
+          slug?: string | null
+          status?: string
           studio?: string | null
           styles?: string[]
           subjects?: string[]
@@ -160,6 +340,30 @@ export type Database = {
           types?: string[]
           updated_at?: string
           url?: string | null
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -189,6 +393,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_register_site: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
