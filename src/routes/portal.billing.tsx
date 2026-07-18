@@ -17,7 +17,6 @@ function Billing() {
   const [paidUntil, setPaidUntil] = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [busy, setBusy] = useState(false);
-  const [method, setMethod] = useState<"paypal" | "card">("card");
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -33,14 +32,14 @@ function Billing() {
   }
   useEffect(() => { load(); }, []);
 
-  // Demo activation. In production this would go through Stripe/PayPal checkout.
-  async function upgrade() {
+  // Demo PayPal activation. Production would launch PayPal Checkout and verify via webhook.
+  async function upgradeWithPayPal() {
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setBusy(false); return; }
     const { error: payErr } = await supabase.from("payments" as never).insert({
-      user_id: user.id, amount_cents: 300, currency: "USD", provider: method === "paypal" ? "paypal" : "card_demo",
-      status: "succeeded", period_months: 1, external_id: `demo_${Date.now()}`,
+      user_id: user.id, amount_cents: 300, currency: "USD", provider: "paypal",
+      status: "succeeded", period_months: 1, external_id: `pp_demo_${Date.now()}`,
     } as never);
     if (payErr) { setBusy(false); return toast.error(payErr.message); }
     const until = new Date(); until.setMonth(until.getMonth() + 1);
@@ -50,7 +49,7 @@ function Billing() {
     } as never).eq("user_id", user.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Upgraded to Paid!");
+    toast.success("Upgraded to Paid via PayPal!");
     load();
   }
 
@@ -75,15 +74,17 @@ function Billing() {
         {!isPaidActive && (
           <section className="rounded-xl border border-border bg-card p-6">
             <h2 className="mb-2 text-lg font-semibold">Upgrade to Paid — $3 / month</h2>
-            <p className="mb-4 text-sm text-muted-foreground">Register up to 20 additional sites each month.</p>
-            <div className="mb-4 flex gap-2">
-              <button onClick={() => setMethod("card")} className={`flex-1 rounded-lg border p-3 text-sm ${method === "card" ? "border-foreground bg-accent" : "border-border"}`}>Credit/Debit Card</button>
-              <button onClick={() => setMethod("paypal")} className={`flex-1 rounded-lg border p-3 text-sm ${method === "paypal" ? "border-foreground bg-accent" : "border-border"}`}>PayPal</button>
-            </div>
-            <button onClick={upgrade} disabled={busy} className="w-full rounded bg-foreground px-4 py-2.5 text-sm text-background hover:opacity-90 disabled:opacity-50">
-              {busy ? "Processing…" : `Pay with ${method === "paypal" ? "PayPal" : "Card"}`}
+            <p className="mb-4 text-sm text-muted-foreground">Register up to 20 additional sites each month. Payment is handled securely via PayPal — you can pay with your PayPal balance or any debit/credit card supported by PayPal Checkout.</p>
+            <button
+              onClick={upgradeWithPayPal}
+              disabled={busy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#003087] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? "Processing…" : (
+                <>Pay with <span className="italic"><span className="text-white">Pay</span><span className="text-[#009cde]">Pal</span></span></>
+              )}
             </button>
-            <p className="mt-2 text-xs text-muted-foreground">Note: Payment processing is running in demo mode. Real Stripe/PayPal checkout will be wired once payments are enabled.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Note: PayPal Checkout is running in demo mode. Live PayPal payments will be wired up once the PayPal keys are provided.</p>
           </section>
         )}
 
