@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ALL_FILTERS, thumbFor, type Site } from "@/lib/sites-data";
 
+type HomeSite = Site & { slug: string };
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -33,8 +35,8 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const [settings, setSettings] = useState<{ hero_headline: string; hero_subhead: string; featured_site_id: string | null } | null>(null);
-  const [featured, setFeatured] = useState<Site | null>(null);
-  const [recent, setRecent] = useState<Site[]>([]);
+  const [featured, setFeatured] = useState<HomeSite | null>(null);
+  const [recent, setRecent] = useState<HomeSite[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -48,7 +50,7 @@ function Home() {
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(7);
-      const list = (sites as Site[] | null) ?? [];
+      const list = (sites as HomeSite[] | null) ?? [];
 
       const fid = (s as never as { featured_site_id?: string } | null)?.featured_site_id ?? null;
       const f = fid ? list.find((x) => x.id === fid) ?? null : null;
@@ -93,7 +95,7 @@ function Home() {
 
           <div className="relative">
             {featured ? (
-              <a href={featured.url ?? "#"} target={featured.url ? "_blank" : undefined} rel="noreferrer" className="group block">
+              <Link to="/site/$slug" params={{ slug: featured.slug }} className="group block">
                 <div className="overflow-hidden rounded-xl border border-border bg-muted">
                   <div className="aspect-[4/3] overflow-hidden">
                     <img src={thumbFor(featured)} alt={`${featured.title} website preview`} loading="eager" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
@@ -106,7 +108,7 @@ function Home() {
                     {featured.studio && <span className="text-xs text-muted-foreground">{featured.studio}</span>}
                   </div>
                 </div>
-              </a>
+              </Link>
             ) : (
               <div className="aspect-[4/3] rounded-xl border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground flex items-center justify-center text-center">
                 Featured work will appear here once admins publish their first site.
@@ -134,7 +136,7 @@ function Home() {
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {recent.map((s) => (
               <article key={s.id} className="group">
-                <a href={s.url ?? "#"} target={s.url ? "_blank" : undefined} rel="noreferrer">
+                <Link to="/site/$slug" params={{ slug: s.slug }}>
                   <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-muted">
                     <img src={thumbFor(s)} alt={`${s.title} website preview`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
                   </div>
@@ -142,7 +144,7 @@ function Home() {
                     <h3 className="text-sm font-medium">{s.title}</h3>
                     {s.studio && <span className="text-xs text-muted-foreground">{s.studio}</span>}
                   </div>
-                </a>
+                </Link>
               </article>
             ))}
           </div>
